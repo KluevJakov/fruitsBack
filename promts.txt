@@ -1,0 +1,1 @@
+[bouquet_with_sweets] так вводить конфетные, [bouquet_with_fruit], [bouquet_nuts_and_dried_fruits], [bouquet_with_berries]
