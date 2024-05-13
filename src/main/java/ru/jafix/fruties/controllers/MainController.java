@@ -6,11 +6,15 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
+import ru.jafix.fruties.entities.Bouquet;
 import ru.jafix.fruties.entities.Ingredient;
+import ru.jafix.fruties.entities.Order;
 import ru.jafix.fruties.entities.dto.Request;
 import ru.jafix.fruties.entities.dto.Response;
+import ru.jafix.fruties.repositories.BouquetRepository;
 import ru.jafix.fruties.repositories.CategoryRepository;
 import ru.jafix.fruties.repositories.IngredientRepository;
+import ru.jafix.fruties.repositories.OrderRepository;
 import ru.jafix.fruties.services.FileService;
 import org.springframework.http.MediaType;
 
@@ -28,6 +32,10 @@ public class MainController {
     protected CategoryRepository categoryRepository;
     @Autowired
     protected IngredientRepository ingredientRepository;
+    @Autowired
+    protected BouquetRepository bouquetRepository;
+    @Autowired
+    protected OrderRepository orderRepository;
 
     protected final String url = "http://127.0.0.1:7860/sdapi/v1/txt2img";
 
@@ -66,6 +74,7 @@ public class MainController {
 
         Request request = new Request();
         request.setPrompt(sb.toString());
+        request.setSteps(1); //TODO: УБРАТЬ ЭТУ СТРОКУ НА ПРОДЕ
 
         ResponseEntity<Response> responseEntity = restTemplate.postForEntity(url, request, Response.class); //запрос к нейронке
         Response response = responseEntity.getBody();
@@ -74,11 +83,22 @@ public class MainController {
         UUID uuid = UUID.randomUUID();
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
-        headers.setContentDispositionFormData("filename", "generated_image.png");
+        headers.setContentDispositionFormData("filename", String.format("%s.png", uuid));
         fileService.decodeAndSaveImage(response.getImages()[0], String.format("%s.png", uuid));
         return new ResponseEntity<>(imageBytes, headers, HttpStatus.OK);
     }
 
+
+    @PostMapping(value = "/order")
+    public ResponseEntity<?> createOrder(@RequestBody Order order) {
+        for (Bouquet bouquet : order.getBouquets()) {
+            bouquet.setUuid(UUID.randomUUID());
+            bouquetRepository.save(bouquet);
+        }
+        order.setId(UUID.randomUUID());
+        orderRepository.save(order);
+        return ResponseEntity.ok().build();
+    }
 
     @GetMapping("/categories")
     public ResponseEntity<?> categories() {
@@ -90,5 +110,11 @@ public class MainController {
     public ResponseEntity<?> ingredients(@PathVariable("id") UUID id) {
         System.out.println("ingredients");
         return ResponseEntity.ok(ingredientRepository.findByCategory_Id(id));
+    }
+
+    @GetMapping("/orders")
+    public ResponseEntity<?> orders() {
+        System.out.println("orders");
+        return ResponseEntity.ok(orderRepository.findAll());
     }
 }

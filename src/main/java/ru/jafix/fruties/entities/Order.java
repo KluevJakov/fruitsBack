@@ -29,7 +29,5 @@ public class Order {
     @Enumerated(EnumType.STRING)
     protected Payment paymentMethod;
     @ManyToMany
-    protected List<Ingredient> ingredients;
-    @ManyToMany
     protected List<Bouquet> bouquets;
 }

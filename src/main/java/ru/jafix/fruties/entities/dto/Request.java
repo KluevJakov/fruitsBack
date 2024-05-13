@@ -7,4 +7,5 @@ import lombok.Setter;
 @Setter
 public class Request {
     protected String prompt;
+    protected Integer steps;
 }
