@@ -16,7 +16,7 @@ CREATE TABLE bouquet (
   uuid UUID NOT NULL,
    id INTEGER,
    name VARCHAR(255),
-   img VARCHAR(255),
+   img OID,
    quantity INTEGER,
    description VARCHAR(255),
    section VARCHAR(255),
@@ -46,6 +46,7 @@ CREATE TABLE order_table (
    address VARCHAR(255),
    comment VARCHAR(255),
    payment_method VARCHAR(255),
+   approved BOOLEAN,
    CONSTRAINT pk_order_table PRIMARY KEY (id)
 );
 

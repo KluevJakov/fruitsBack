@@ -1,25 +1,31 @@
 package ru.jafix.fruties.controllers;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.multipart.MultipartFile;
 import ru.jafix.fruties.entities.Bouquet;
+import ru.jafix.fruties.entities.Image;
 import ru.jafix.fruties.entities.Ingredient;
 import ru.jafix.fruties.entities.Order;
 import ru.jafix.fruties.entities.dto.Request;
 import ru.jafix.fruties.entities.dto.Response;
-import ru.jafix.fruties.repositories.BouquetRepository;
-import ru.jafix.fruties.repositories.CategoryRepository;
-import ru.jafix.fruties.repositories.IngredientRepository;
-import ru.jafix.fruties.repositories.OrderRepository;
+import ru.jafix.fruties.repositories.*;
 import ru.jafix.fruties.services.FileService;
 import org.springframework.http.MediaType;
 
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Base64;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @CrossOrigin(origins = "http://localhost:5173")
@@ -36,8 +42,11 @@ public class MainController {
     protected BouquetRepository bouquetRepository;
     @Autowired
     protected OrderRepository orderRepository;
+    @Autowired
+    protected ImageRepository imageRepository;
 
     protected final String url = "http://127.0.0.1:7860/sdapi/v1/txt2img";
+    protected final String tempStoragePath = "/home/loo9y/IdeaProjects/fruitsBack/storage/";
 
     @GetMapping("/")
     public ResponseEntity<?> get() {
@@ -84,10 +93,27 @@ public class MainController {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
         headers.setContentDispositionFormData("filename", String.format("%s.png", uuid));
-        fileService.decodeAndSaveImage(response.getImages()[0], String.format("%s.png", uuid));
+        //fileService.decodeAndSaveImage(response.getImages()[0], String.format("%s.png", uuid));
         return new ResponseEntity<>(imageBytes, headers, HttpStatus.OK);
     }
 
+    @PostMapping(value = "/uploadImage", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> uploadImage(@RequestParam("file") MultipartFile file) {
+        try {
+            Image image = new Image();
+            image.setData(file.getBytes());
+            image.setMimeType(file.getContentType());
+            UUID savedUUID = UUID.randomUUID();
+            image.setUuid(savedUUID);
+
+            fileService.saveImage(file.getBytes(), savedUUID+".png");
+            imageRepository.save(image);
+
+            return ResponseEntity.ok(image.getUuid());
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error saving image");
+        }
+    }
 
     @PostMapping(value = "/order")
     public ResponseEntity<?> createOrder(@RequestBody Order order) {
@@ -97,6 +123,23 @@ public class MainController {
         }
         order.setId(UUID.randomUUID());
         orderRepository.save(order);
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping(value = "/order/{id}")
+    public ResponseEntity<?> deleteOrder(@PathVariable UUID id) {
+        orderRepository.deleteById(id);
+        return ResponseEntity.ok().build();
+    }
+
+    @PutMapping(value = "/order/{id}")
+    public ResponseEntity<?> approveOrder(@PathVariable UUID id) {
+        Optional<Order> order = orderRepository.findById(id);
+
+        if (order.isPresent()) {
+            order.get().setApproved(true);
+            orderRepository.save(order.get());
+        }
         return ResponseEntity.ok().build();
     }
 
@@ -115,6 +158,32 @@ public class MainController {
     @GetMapping("/orders")
     public ResponseEntity<?> orders() {
         System.out.println("orders");
-        return ResponseEntity.ok(orderRepository.findAll());
+        return ResponseEntity.ok(orderRepository.findAll().stream()
+                        .peek(e -> {
+                            e.getBouquets().forEach(o -> o.setImg("http://localhost:8080/images/" + o.getImageUuid() + ".png"));
+                        })
+                .toList());
+    }
+
+    private final Path imageDirectory = Paths.get(tempStoragePath);
+
+    @GetMapping("/images/{filename:.+}")
+    @ResponseBody
+    public ResponseEntity<Resource> getImage(@PathVariable String filename) {
+        Path imagePath = imageDirectory.resolve(filename);
+        try {
+            Resource resource = new UrlResource(imagePath.toUri());
+            if (resource.exists() || resource.isReadable()) {
+                return ResponseEntity.ok()
+                        .contentType(MediaType.IMAGE_PNG) // Change MediaType according to your image type
+                        .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + resource.getFilename() + "\"")
+                        .body(resource);
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+            return ResponseEntity.notFound().build();
+        }
     }
 }

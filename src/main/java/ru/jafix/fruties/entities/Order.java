@@ -30,4 +30,5 @@ public class Order {
     protected Payment paymentMethod;
     @ManyToMany
     protected List<Bouquet> bouquets;
+    protected Boolean approved;
 }

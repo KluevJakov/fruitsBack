@@ -2,6 +2,7 @@ package ru.jafix.fruties.entities;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToMany;
 import lombok.Getter;
 import lombok.Setter;
@@ -20,6 +21,7 @@ public class Bouquet {
     protected Integer id;
     protected String name;
     protected String img;
+    protected String imageUuid;
     protected Integer quantity;
     @ManyToMany
     protected List<Ingredient> composition;

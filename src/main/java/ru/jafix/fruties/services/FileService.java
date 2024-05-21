@@ -6,16 +6,27 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Base64;
+import java.util.UUID;
 
 @Service
 public class FileService {
 
-    protected final String tempStoragePath = "C:\\Users\\Aorus\\Downloads\\fruties\\fruties\\storage\\";
+    protected final String tempStoragePath = "/home/loo9y/IdeaProjects/fruitsBack/storage/";
 
     public void decodeAndSaveImage(String base64ImageData, String outputPath) {
         try {
             byte[] imageBytes = Base64.getDecoder().decode(base64ImageData);
 
+            try (OutputStream outputStream = new FileOutputStream(tempStoragePath+ outputPath)) {
+                outputStream.write(imageBytes);
+            }
+        } catch (IOException e) {
+            System.err.println("Ошибка при декодировании и сохранении изображения: ");
+        }
+    }
+
+    public void saveImage(byte[] imageBytes, String outputPath) {
+        try {
             try (OutputStream outputStream = new FileOutputStream(tempStoragePath+ outputPath)) {
                 outputStream.write(imageBytes);
             }
