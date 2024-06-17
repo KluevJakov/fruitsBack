@@ -60,7 +60,7 @@ public class UserService {
             throw new RuntimeException("Неверный пароль");
         }
 
-        return new JwtDto(jwtService.generate(user.getLogin()));
+        return new JwtDto(jwtService.generate(user.getLogin(), userFromDb.get()), userFromDb.get().getRole());
     }
 
 }

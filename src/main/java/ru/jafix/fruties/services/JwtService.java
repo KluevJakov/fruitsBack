@@ -7,6 +7,7 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import ru.jafix.fruties.entities.User;
 
 import javax.crypto.SecretKey;
 import java.util.Base64;
@@ -21,12 +22,13 @@ public class JwtService {
     @Value("${exp_time}")
     protected String expirationTime;
 
-    public String generate(String subject) {
+    public String generate(String subject, User user) {
         Date date = new Date();
         return Jwts.builder()
                 .signWith(getSecretKey(), Jwts.SIG.HS512)
                 .subject(subject)
                 .issuedAt(date)
+                .claim("role", user.getRole())
                 .expiration(new Date(date.getTime() + Long.parseLong(expirationTime)))
                 .compact();
     }
