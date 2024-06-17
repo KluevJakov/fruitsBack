@@ -1,9 +1,6 @@
 package ru.jafix.fruties.entities;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Lob;
-import jakarta.persistence.ManyToMany;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -17,8 +14,9 @@ import java.util.UUID;
 @ToString
 public class Bouquet {
     @Id
-    protected UUID uuid;
-    protected Integer id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(name = "id", nullable = false)
+    protected UUID id;
     protected String name;
     protected String img;
     protected String imageUuid;
@@ -28,4 +26,9 @@ public class Bouquet {
     protected String description;
     protected String section;
     protected String price;
+    protected Boolean isDefault;
+    protected Boolean isNew;
+    @ManyToOne
+    @JoinColumn(name = "category_id")
+    protected Category category;
 }

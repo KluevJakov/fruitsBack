@@ -85,15 +85,15 @@ public class MainController {
         request.setPrompt(sb.toString());
         request.setSteps(1); //TODO: УБРАТЬ ЭТУ СТРОКУ НА ПРОДЕ
 
-        ResponseEntity<Response> responseEntity = restTemplate.postForEntity(url, request, Response.class); //запрос к нейронке
-        Response response = responseEntity.getBody();
+        /*ResponseEntity<Response> responseEntity = restTemplate.postForEntity(url, request, Response.class); //запрос к нейронке//TODO: STUB
+        Response response = responseEntity.getBody();*///TODO: STUB
+        byte[] imageBytes = restTemplate.getForObject("https://i.pinimg.com/736x/d8/81/c8/d881c8deeaf7a98cee39062f8cd9c37d.jpg", byte[].class); //TODO: STUB
 
-        byte[] imageBytes = Base64.getDecoder().decode(response.getImages()[0]);
+        //byte[] imageBytes = Base64.getDecoder().decode(response.getImages()[0]); //TODO: STUB
         UUID uuid = UUID.randomUUID();
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
         headers.setContentDispositionFormData("filename", String.format("%s.png", uuid));
-        //fileService.decodeAndSaveImage(response.getImages()[0], String.format("%s.png", uuid));
         return new ResponseEntity<>(imageBytes, headers, HttpStatus.OK);
     }
 
@@ -104,12 +104,12 @@ public class MainController {
             image.setData(file.getBytes());
             image.setMimeType(file.getContentType());
             UUID savedUUID = UUID.randomUUID();
-            image.setUuid(savedUUID);
+            image.setId(savedUUID);
 
             fileService.saveImage(file.getBytes(), savedUUID+".png");
             imageRepository.save(image);
 
-            return ResponseEntity.ok(image.getUuid());
+            return ResponseEntity.ok(image.getId());
         } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error saving image");
         }
@@ -118,7 +118,7 @@ public class MainController {
     @PostMapping(value = "/order")
     public ResponseEntity<?> createOrder(@RequestBody Order order) {
         for (Bouquet bouquet : order.getBouquets()) {
-            bouquet.setUuid(UUID.randomUUID());
+            bouquet.setId(UUID.randomUUID());
             bouquetRepository.save(bouquet);
         }
         order.setId(UUID.randomUUID());
@@ -154,6 +154,19 @@ public class MainController {
         System.out.println("ingredients");
         return ResponseEntity.ok(ingredientRepository.findByCategory_Id(id));
     }
+
+    @GetMapping("/bouquets/cat/{id}")
+    public ResponseEntity<?> bouquetsByCat(@PathVariable("id") UUID id) {
+        System.out.println("bouquetsByCat");
+        return ResponseEntity.ok(bouquetRepository.findByCategory_Id(id));
+    }
+
+    @GetMapping("/bouquets/new")
+    public ResponseEntity<?> bouquetsByNew() {
+        System.out.println("bouquetsByNew");
+        return ResponseEntity.ok(bouquetRepository.findByIsNew(true));
+    }
+
 
     @GetMapping("/orders")
     public ResponseEntity<?> orders() {

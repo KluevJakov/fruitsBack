@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import ru.jafix.fruties.entities.dto.Delivery;
+import ru.jafix.fruties.entities.dto.Payment;
 
 import java.util.Date;
 import java.util.List;
@@ -16,6 +18,8 @@ import java.util.UUID;
 @ToString
 public class Order {
     @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(name = "id", nullable = false)
     protected UUID id;
     protected String customerName;
     protected String phoneCustomer;

@@ -11,7 +11,9 @@ import java.util.UUID;
 @Setter
 public class Image {
     @Id
-    private UUID uuid;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(name = "id", nullable = false)
+    private UUID id;
 
     @Lob
     private byte[] data;
