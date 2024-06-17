@@ -7,23 +7,26 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.preauth.AbstractPreAuthenticatedProcessingFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
 import ru.jafix.fruties.services.CustomUserDetailsService;
+import ru.jafix.fruties.services.JwtFilter;
 
 import java.util.Arrays;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfiguration {
-    final String corsOrigin="http://localhost:8080";
+    final String corsOrigin="http://localhost:5173";
     private final CustomUserDetailsService userDetailsService;
 
     @Autowired
@@ -47,26 +50,24 @@ public class SecurityConfiguration {
                         .requestMatchers("/generate/**").permitAll()
                         .requestMatchers("/uploadImage/**").permitAll()
                         .requestMatchers("/images/**").permitAll()
+                        .requestMatchers("/register/**").permitAll()
+                        .requestMatchers("/auth/**").permitAll()
                         .anyRequest().authenticated()
                 )
-                .formLogin(form -> form
-                        .loginPage("/")
-                        .loginProcessingUrl("/login")
-                        .usernameParameter("login")
-                        .defaultSuccessUrl("/", true)
-                        .failureHandler(authenticationFailureHandler())
-                        .permitAll()
-                )
-                .logout(logout -> logout
-                        .logoutUrl("/logout")
-                        .deleteCookies("JSESSIONID")
-                        .logoutSuccessUrl("/")
-                        .permitAll()
-                );
-                /*http.addFilterBefore(new CorsFilter(
+                .formLogin(form -> form.disable())
+                .sessionManagement(e -> e.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+                http.addFilterBefore(new CorsFilter(
                         corsConfigurationSource(corsOrigin)),
-                        AbstractPreAuthenticatedProcessingFilter.class);*/
+                        AbstractPreAuthenticatedProcessingFilter.class);
+
+                http.addFilterBefore(jwtFilter(), UsernamePasswordAuthenticationFilter.class);
+
         return http.build();
+    }
+
+    @Bean
+    public JwtFilter jwtFilter() {
+        return new JwtFilter();
     }
 
     @Bean
@@ -78,7 +79,7 @@ public class SecurityConfiguration {
     public void configure(AuthenticationManagerBuilder auth, @Lazy PasswordEncoder passwordEncoder) throws Exception {
         auth.userDetailsService(userDetailsService).passwordEncoder(passwordEncoder);
     }
-/*
+
     private CorsConfigurationSource corsConfigurationSource(String corsOrigin) {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(Arrays.asList(corsOrigin));
@@ -92,5 +93,5 @@ public class SecurityConfiguration {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
-    }*/
+    }
 }
