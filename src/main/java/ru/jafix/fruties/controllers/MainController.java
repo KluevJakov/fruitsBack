@@ -28,6 +28,7 @@ import java.util.UUID;
 
 import static ru.jafix.fruties.configuration.Constants.tempStoragePath;
 
+@SuppressWarnings("unused")
 @CrossOrigin(origins = "http://localhost:5173")
 @RestController
 public class MainController {
@@ -50,12 +51,6 @@ public class MainController {
     private JwtService jwtService;
 
     protected final String url = "http://127.0.0.1:7860/sdapi/v1/txt2img";
-
-    @GetMapping("/")
-    public ResponseEntity<?> get() {
-        return ResponseEntity.ok().build();
-    }
-
 
     @PostMapping(value = "/generate", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     public ResponseEntity<?> generateImage(@RequestBody List<Ingredient> ingredients,
@@ -107,18 +102,26 @@ public class MainController {
         }
 
         for (Ingredient ingredient : ingredients) {
-            sb.append(ingredient.getTranslate() + " and ");
+            sb.append(ingredient.getTranslate()).append(" and ");
         }
 
         Request request = new Request();
         request.setPrompt(sb.toString());
-        request.setSteps(1); //TODO: УБРАТЬ ЭТУ СТРОКУ НА ПРОДЕ
+        request.setSteps(1); //TODO: УВЕЛИЧИВАТЬ НА ПРОДАКШЕНЕ
 
-        /*ResponseEntity<Response> responseEntity = restTemplate.postForEntity(url, request, Response.class); //запрос к нейронке//TODO: STUB
-        Response response = responseEntity.getBody();*///TODO: STUB
-        byte[] imageBytes = restTemplate.getForObject("https://i.pinimg.com/736x/d8/81/c8/d881c8deeaf7a98cee39062f8cd9c37d.jpg", byte[].class); //TODO: STUB
+        ResponseEntity<Response> responseEntity = restTemplate.postForEntity(url, request, Response.class); //запрос к нейронке
+        Response response = responseEntity.getBody();
 
-        //byte[] imageBytes = Base64.getDecoder().decode(response.getImages()[0]); //TODO: STUB
+        /*
+        //Это заглушка чтобы не ждать генерации на слабых компах
+        byte[] imageBytes = restTemplate.getForObject("https://i.pinimg.com/736x/d8/81/c8/d881c8deeaf7a98cee39062f8cd9c37d.jpg", byte[].class);
+        */
+
+        byte[] imageBytes = null;
+        if (response != null && response.getImages() != null) {
+            imageBytes = Base64.getDecoder().decode(response.getImages()[0]);
+        }
+
         UUID uuid = UUID.randomUUID();
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
@@ -243,9 +246,7 @@ public class MainController {
     public ResponseEntity<?> orders() {
         System.out.println("orders");
         return ResponseEntity.ok(orderRepository.findAll().stream()
-                        .peek(e -> {
-                            e.getBouquets().forEach(o -> o.setImg("http://localhost:8080/images/" + o.getImageUuid() + ".png"));
-                        })
+                        .peek(e -> e.getBouquets().forEach(o -> o.setImg("http://localhost:8080/images/" + o.getImageUuid() + ".png")))
                 .toList());
     }
 
@@ -266,7 +267,6 @@ public class MainController {
                 return ResponseEntity.notFound().build();
             }
         } catch (MalformedURLException e) {
-            e.printStackTrace();
             return ResponseEntity.notFound().build();
         }
     }
