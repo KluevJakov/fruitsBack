@@ -23,6 +23,8 @@ public class User implements UserDetails {
     private String login;
     private String password;
 
+    private Integer genlimit;
+
     @ManyToOne
     @JoinColumn(name = "role_id")
     private Role role;

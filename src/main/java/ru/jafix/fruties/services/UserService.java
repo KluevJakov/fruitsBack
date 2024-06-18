@@ -26,6 +26,8 @@ public class UserService {
     @Autowired
     protected PasswordEncoder passwordEncoder;
 
+    protected final Integer LIMIT = 10;
+
     public User getById(UUID id) {
         Optional<User> user = userRepository.findById(id);
 
@@ -44,6 +46,7 @@ public class UserService {
         }
 
         Optional<Role> userRole = roleRepository.findById(UUID.fromString("efe08854-9f59-4d9b-9723-1709488c4413"));
+        user.setGenlimit(LIMIT);
         user.setRole(userRole.get());
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         return userRepository.save(user);

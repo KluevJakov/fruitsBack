@@ -52,6 +52,7 @@ public class SecurityConfiguration {
                         .requestMatchers("/images/**").permitAll()
                         .requestMatchers("/register/**").permitAll()
                         .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers("/limit/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form.disable())

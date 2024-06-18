@@ -9,15 +9,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
-import ru.jafix.fruties.entities.Bouquet;
-import ru.jafix.fruties.entities.Image;
-import ru.jafix.fruties.entities.Ingredient;
-import ru.jafix.fruties.entities.Order;
+import ru.jafix.fruties.entities.*;
 import ru.jafix.fruties.entities.dto.Request;
 import ru.jafix.fruties.entities.dto.Response;
 import ru.jafix.fruties.repositories.*;
 import ru.jafix.fruties.services.FileService;
 import org.springframework.http.MediaType;
+import ru.jafix.fruties.services.JwtService;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -44,9 +42,13 @@ public class MainController {
     protected OrderRepository orderRepository;
     @Autowired
     protected ImageRepository imageRepository;
+    @Autowired
+    protected UserRepository userRepository;
+    @Autowired
+    private JwtService jwtService;
 
     protected final String url = "http://127.0.0.1:7860/sdapi/v1/txt2img";
-    protected final String tempStoragePath = "/home/loo9y/IdeaProjects/fruitsBack/storage/";
+    protected final String tempStoragePath = "/home/loo9y/IdeaProjects/fruitsBack/storage/"; //TODO:
 
     @GetMapping("/")
     public ResponseEntity<?> get() {
@@ -55,7 +57,33 @@ public class MainController {
 
 
     @PostMapping(value = "/generate", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
-    public ResponseEntity<byte[]> generateImage(@RequestBody List<Ingredient> ingredients) {
+    public ResponseEntity<?> generateImage(@RequestBody List<Ingredient> ingredients,
+                                                @RequestHeader("Authorization") String authorization) {
+
+        /* Авторизация */
+            if (authorization != null) {
+                String loginFromJwt = jwtService.getUsernameFromToken(authorization.substring(7));
+                Optional<User> user = userRepository.findByLogin(loginFromJwt);
+
+                if (user.isEmpty()) {
+                    return ResponseEntity.status(401).body("Jwt error");
+                }
+
+                User fromWrapper = user.get();
+                if (fromWrapper.getGenlimit() <= 0) {
+                    return ResponseEntity.status(400).body("Limit appears");
+                }
+
+
+                /* Уменьшаем доступный лимит генераций */
+                fromWrapper.setGenlimit(fromWrapper.getGenlimit()-1);
+                userRepository.save(fromWrapper);
+                /**/
+            } else {
+                return ResponseEntity.status(401).body("User not authed");
+            }
+        /**/
+
         RestTemplate restTemplate = new RestTemplate();
 
         System.out.println(ingredients);
@@ -94,6 +122,7 @@ public class MainController {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
         headers.setContentDispositionFormData("filename", String.format("%s.png", uuid));
+
         return new ResponseEntity<>(imageBytes, headers, HttpStatus.OK);
     }
 

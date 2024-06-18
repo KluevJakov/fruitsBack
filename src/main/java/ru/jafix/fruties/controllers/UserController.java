@@ -3,14 +3,12 @@ package ru.jafix.fruties.controllers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import ru.jafix.fruties.entities.Role;
 import ru.jafix.fruties.entities.User;
 import ru.jafix.fruties.entities.dto.UserDto;
 import ru.jafix.fruties.repositories.UserRepository;
+import ru.jafix.fruties.services.JwtService;
 import ru.jafix.fruties.services.UserService;
 
 
@@ -23,6 +21,10 @@ public class UserController {
 
     @Autowired
     protected UserService userService;
+    @Autowired
+    private JwtService jwtService;
+    @Autowired
+    private UserRepository userRepository;
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody User user) {
@@ -42,5 +44,24 @@ public class UserController {
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
+    }
+
+    @GetMapping("/limit")
+    public ResponseEntity<?> auth(@RequestHeader("Authorization") String authorization) {
+        /* Авторизация */
+        if (authorization != null) {
+            String loginFromJwt = jwtService.getUsernameFromToken(authorization.substring(7));
+            Optional<User> user = userRepository.findByLogin(loginFromJwt);
+
+            if (user.isEmpty()) {
+                return ResponseEntity.status(401).body("Jwt error");
+            }
+
+            User fromWrapper = user.get();
+            return ResponseEntity.ok(fromWrapper.getGenlimit());
+        } else {
+            return ResponseEntity.status(401).body("User not authed");
+        }
+        /**/
     }
 }
