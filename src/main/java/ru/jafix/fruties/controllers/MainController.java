@@ -250,6 +250,30 @@ public class MainController {
                 .toList());
     }
 
+    @GetMapping("/orders/my")
+    public ResponseEntity<?> ordersMy(@RequestHeader("Authorization") String authorization) {
+        System.out.println("ordersMy");
+
+        User fromWrapper;
+        if (authorization != null) {
+            String loginFromJwt = jwtService.getUsernameFromToken(authorization.substring(7));
+            Optional<User> user = userRepository.findByLogin(loginFromJwt);
+
+            if (user.isEmpty()) {
+                return ResponseEntity.status(401).body("Jwt error");
+            }
+
+            fromWrapper = user.get();
+        } else {
+            return ResponseEntity.status(401).body("User not authed");
+        }
+
+        return ResponseEntity.ok(orderRepository.findAll().stream()
+                        .filter(e -> e.getCustomer().equals(fromWrapper))
+                .peek(e -> e.getBouquets().forEach(o -> o.setImg("http://localhost:8080/images/" + o.getImageUuid() + ".png")))
+                .toList());
+    }
+
     private final Path imageDirectory = Paths.get(tempStoragePath);
 
     @GetMapping("/images/{filename:.+}")
