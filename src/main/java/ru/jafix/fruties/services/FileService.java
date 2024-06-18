@@ -8,10 +8,10 @@ import java.io.OutputStream;
 import java.util.Base64;
 import java.util.UUID;
 
+import static ru.jafix.fruties.configuration.Constants.tempStoragePath;
+
 @Service
 public class FileService {
-
-    protected final String tempStoragePath = "/home/kliuevia/IdeaProjects/fruitsBack/src/main/resources/res/"; //TODO: STUB
 
     public void decodeAndSaveImage(String base64ImageData, String outputPath) {
         try {

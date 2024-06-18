@@ -26,6 +26,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import static ru.jafix.fruties.configuration.Constants.tempStoragePath;
+
 @CrossOrigin(origins = "http://localhost:5173")
 @RestController
 public class MainController {
@@ -48,7 +50,6 @@ public class MainController {
     private JwtService jwtService;
 
     protected final String url = "http://127.0.0.1:7860/sdapi/v1/txt2img";
-    protected final String tempStoragePath = "/home/loo9y/IdeaProjects/fruitsBack/storage/"; //TODO:
 
     @GetMapping("/")
     public ResponseEntity<?> get() {
@@ -145,12 +146,32 @@ public class MainController {
     }
 
     @PostMapping(value = "/order")
-    public ResponseEntity<?> createOrder(@RequestBody Order order) {
+    public ResponseEntity<?> createOrder(@RequestBody Order order,
+                                         @RequestHeader("Authorization") String authorization) {
         for (Bouquet bouquet : order.getBouquets()) {
-            bouquet.setId(UUID.randomUUID());
-            bouquetRepository.save(bouquet);
+            if (bouquet != null && bouquet.getId() == null) {
+                bouquet.setId(UUID.randomUUID());
+                bouquetRepository.save(bouquet);
+            }
         }
         order.setId(UUID.randomUUID());
+        /* Авторизация */
+        if (authorization != null) {
+            String loginFromJwt = jwtService.getUsernameFromToken(authorization.substring(7));
+            Optional<User> user = userRepository.findByLogin(loginFromJwt);
+
+            if (user.isEmpty()) {
+                return ResponseEntity.status(401).body("Jwt error");
+            }
+
+            User fromWrapper = user.get();
+            order.setCustomer(fromWrapper);
+            /**/
+        } else {
+            return ResponseEntity.status(401).body("User not authed");
+        }
+        /**/
+
         orderRepository.save(order);
         return ResponseEntity.ok().build();
     }
@@ -187,7 +208,7 @@ public class MainController {
     @GetMapping("/bouquets/cat/{id}")
     public ResponseEntity<?> bouquetsByCat(@PathVariable("id") UUID id) {
         System.out.println("bouquetsByCat");
-        return ResponseEntity.ok(bouquetRepository.findByCategory_Id(id));
+        return ResponseEntity.ok(bouquetRepository.findByCategory_Id(id).stream().filter(e -> (e.getIsDefault() != null && e.getIsDefault())).toList());
     }
 
     @GetMapping("/bouquets/new")
@@ -196,6 +217,14 @@ public class MainController {
         return ResponseEntity.ok(bouquetRepository.findByIsNew(true));
     }
 
+    @PostMapping(value = "/bouquets")
+    public ResponseEntity<?> createBouquets(@RequestBody Bouquet bouquet) {
+        bouquet.setId(UUID.randomUUID());
+        bouquet.setIsDefault(true);
+        bouquet.setQuantity(1);
+        bouquetRepository.save(bouquet);
+        return ResponseEntity.ok(bouquet);
+    }
 
     @GetMapping("/orders")
     public ResponseEntity<?> orders() {

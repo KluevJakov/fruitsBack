@@ -14,7 +14,6 @@ import java.util.UUID;
 @ToString
 public class Bouquet {
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "id", nullable = false)
     protected UUID id;
     protected String name;

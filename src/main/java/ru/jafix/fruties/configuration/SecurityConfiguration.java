@@ -47,6 +47,7 @@ public class SecurityConfiguration {
                         .requestMatchers("/ingredients/**").permitAll()
                         .requestMatchers("/bouquets/**").permitAll()
                         .requestMatchers("/orders/**").permitAll()
+                        .requestMatchers("/order/**").permitAll()
                         .requestMatchers("/generate/**").permitAll()
                         .requestMatchers("/uploadImage/**").permitAll()
                         .requestMatchers("/images/**").permitAll()

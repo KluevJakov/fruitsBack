@@ -35,4 +35,9 @@ public class Order {
     @ManyToMany
     protected List<Bouquet> bouquets;
     protected Boolean approved;
+
+    @ManyToOne
+    @JoinColumn(name = "customer_id")
+    private User customer;
+
 }
