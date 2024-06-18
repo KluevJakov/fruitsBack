@@ -205,6 +205,12 @@ public class MainController {
         return ResponseEntity.ok(ingredientRepository.findByCategory_Id(id));
     }
 
+    @GetMapping("/bouquets/default")
+    public ResponseEntity<?> bouquetsDefault() {
+        System.out.println("bouquetsDefault");
+        return ResponseEntity.ok(bouquetRepository.findAll().stream().filter(e -> (e.getIsDefault() != null && e.getIsDefault())).toList());
+    }
+
     @GetMapping("/bouquets/cat/{id}")
     public ResponseEntity<?> bouquetsByCat(@PathVariable("id") UUID id) {
         System.out.println("bouquetsByCat");
@@ -222,6 +228,7 @@ public class MainController {
         bouquet.setId(UUID.randomUUID());
         bouquet.setIsDefault(true);
         bouquet.setQuantity(1);
+        bouquet.setImg("http://localhost:8080/images/"+bouquet.getImageUuid()+".png");
         bouquetRepository.save(bouquet);
         return ResponseEntity.ok(bouquet);
     }
