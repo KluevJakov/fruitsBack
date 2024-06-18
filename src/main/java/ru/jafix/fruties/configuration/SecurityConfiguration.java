@@ -54,6 +54,7 @@ public class SecurityConfiguration {
                         .requestMatchers("/register/**").permitAll()
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers("/limit/**").permitAll()
+                        .requestMatchers("/categories/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form.disable())

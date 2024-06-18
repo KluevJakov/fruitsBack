@@ -226,6 +226,12 @@ public class MainController {
         return ResponseEntity.ok(bouquet);
     }
 
+    @DeleteMapping(value = "/bouquets/{id}")
+    public ResponseEntity<?> createBouquets(@PathVariable("id") UUID bouquet) {
+        bouquetRepository.deleteById(bouquet);
+        return ResponseEntity.ok().build();
+    }
+
     @GetMapping("/orders")
     public ResponseEntity<?> orders() {
         System.out.println("orders");
